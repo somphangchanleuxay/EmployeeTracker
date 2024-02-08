@@ -7,6 +7,7 @@ Need a quick way to keep track of your employees or have ways to see and manage 
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Links](#links)
 - [License](#license)
 
 
