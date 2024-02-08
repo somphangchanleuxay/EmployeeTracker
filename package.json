@@ -1,7 +1,10 @@
 {
   "dependencies": {
+    "ds": "^2.0.2",
+    "fs": "^0.0.1-security",
     "inquirer": "^8.2.4",
     "mysql": "^2.18.1",
-    "mysql2": "^3.9.1"
+    "mysql2": "^3.9.1",
+    "util": "^0.12.5"
   }
 }
