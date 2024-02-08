@@ -388,19 +388,14 @@ async function viewDepartmentBudget() {
     });
 
     // Get the total utilized budget of the selected department
-    const budget = await query('SELECT SUM(salary) AS total_budget FROM roles WHERE department_id = ?', [selectedDepartment.department_id]);
-    
-    console.log(`Total Utilized Budget for ${selectedDepartment.department_name}: $${budget[0].total_budget}`);
+    const budget = await query('SELECT departments.department_name, SUM(roles.salary) AS total_budget FROM roles JOIN departments ON roles.department_id = departments.id WHERE roles.department_id = ?', [selectedDepartment.department_id]);
+
+    console.log(`Total Utilized Budget for ${budget[0].department_name}: $${budget[0].total_budget}`);
     startApp();
   } catch (error) {
     console.error('Error viewing department budget:', error);
     startApp();
   }
-
-  // Get the total utilized budget of the selected department
-  const budget = await query('SELECT SUM(salary) AS total_budget FROM roles WHERE department_id = ?', [selectedDepartment.department_id]);
-  console.log(`Total Utilized Budget for ${selectedDepartment.department_name}: $${budget[0].total_budget}`);
-  startApp();
 }
 
 module.exports = connection;
