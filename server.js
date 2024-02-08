@@ -35,6 +35,12 @@ function startApp() {
           'Add a role',
           'Add an employee',
           'Update an employee role',
+          'View employees by manager',  
+          'View employees by department',  
+          'Delete department',  
+          'Delete role',  
+          'Delete employee',  
+          'View department budget', 
           'Exit',
         ],
       })
@@ -61,13 +67,34 @@ function startApp() {
           case 'Update an employee role':
             updateEmployeeRole();
             break;
+          case 'Update employee manager':
+            updateEmployeeManager();
+            break;
+          case 'View employees by manager':
+            viewEmployeesByManager();
+            break;
+          case 'View employees by department':
+            viewEmployeesByDepartment();
+            break;
+          case 'Delete department':
+            deleteDepartment();
+            break;
+          case 'Delete role':
+            deleteRole();
+            break;
+          case 'Delete employee':
+            deleteEmployee();
+            break;
+          case 'View department budget':
+            viewDepartmentBudget();
+            break;
           case 'Exit':
             connection.end();
             console.log('Connection closed. Goodbye!');
             break;
         }
       });
-  }
+}
   
   // Function to view all departments
   async function viewAllDepartments() {
@@ -195,6 +222,184 @@ async function updateEmployeeRole() {
   await query('UPDATE employees SET role_id = ? WHERE id = ?', [newRoleId.role_id, employeeToUpdate.employee_id]);
 
   console.log('Employee role updated successfully!');
+  startApp();
+}
+
+// Function to update an employee's manager
+async function updateEmployeeManager() {
+  // Get the list of employees for the user to choose from
+  const employees = await query('SELECT id, CONCAT(first_name, " ", last_name) AS full_name FROM employees');
+  
+  // Prompt the user to select an employee to update
+  const employeeToUpdate = await inquirer.prompt({
+    type: 'list',
+    name: 'employee_id',
+    message: 'Select the employee whose manager you want to update:',
+    choices: employees.map((employee) => ({
+      value: employee.id,
+      name: employee.full_name,
+    })),
+  });
+
+  // Prompt the user to enter the new manager ID for the selected employee
+  const newManagerId = await inquirer.prompt({
+    type: 'number',
+    name: 'manager_id',
+    message: 'Enter the new manager ID for the employee:',
+  });
+
+  await query('UPDATE employees SET manager_id = ? WHERE id = ?', [newManagerId.manager_id, employeeToUpdate.employee_id]);
+
+  console.log('Employee manager updated successfully!');
+  startApp();
+}
+
+// Function to view employees by manager
+async function viewEmployeesByManager() {
+  // Get the list of managers for the user to choose from
+  const managers = await query('SELECT DISTINCT manager_id, CONCAT(first_name, " ", last_name) AS full_name FROM employees WHERE manager_id IS NOT NULL');
+  
+  // Prompt the user to select a manager to view employees
+  const selectedManager = await inquirer.prompt({
+    type: 'list',
+    name: 'manager_id',
+    message: 'Select the manager to view employees:',
+    choices: managers.map((manager) => ({
+      value: manager.manager_id,
+      name: manager.full_name,
+    })),
+  });
+
+  // Get employees under the selected manager
+  const employees = await query('SELECT * FROM employees WHERE manager_id = ?', [selectedManager.manager_id]);
+  console.table(employees);
+  startApp();
+}
+
+// Function to view employees by department
+async function viewEmployeesByDepartment() {
+  try {
+    // Get the list of departments for the user to choose from
+    const departments = await query('SELECT * FROM departments');
+
+    // Prompt the user to select a department to view employees
+    const selectedDepartment = await inquirer.prompt({
+      type: 'list',
+      name: 'department_id',
+      message: 'Select the department to view employees:',
+      choices: departments.map((department) => ({
+        value: department.id,
+        name: department.department_name,
+      })),
+    });
+
+    // Get employees in the selected department along with their roles
+    const employees = await query('SELECT employees.*, roles.title AS role_title FROM employees INNER JOIN roles ON employees.role_id = roles.id WHERE roles.department_id = ?', [selectedDepartment.department_id]);
+    
+    console.table(employees);
+    startApp();
+  } catch (error) {
+    console.error('Error viewing employees by department:', error);
+    startApp();
+  }
+}
+
+// Function to delete a department
+async function deleteDepartment() {
+  // Get the list of departments for the user to choose from
+  const departments = await query('SELECT * FROM departments');
+  
+  // Prompt the user to select a department to delete
+  const departmentToDelete = await inquirer.prompt({
+    type: 'list',
+    name: 'department_id',
+    message: 'Select the department to delete:',
+    choices: departments.map((department) => ({
+      value: department.id,
+      name: department.department_name,
+    })),
+  });
+
+  // Delete the selected department
+  await query('DELETE FROM departments WHERE id = ?', [departmentToDelete.department_id]);
+  console.log('Department deleted successfully!');
+  startApp();
+}
+
+// Function to delete a role
+async function deleteRole() {
+  // Get the list of roles for the user to choose from
+  const roles = await query('SELECT * FROM roles');
+  
+  // Prompt the user to select a role to delete
+  const roleToDelete = await inquirer.prompt({
+    type: 'list',
+    name: 'role_id',
+    message: 'Select the role to delete:',
+    choices: roles.map((role) => ({
+      value: role.id,
+      name: role.title,
+    })),
+  });
+
+  // Delete the selected role
+  await query('DELETE FROM roles WHERE id = ?', [roleToDelete.role_id]);
+  console.log('Role deleted successfully!');
+  startApp();
+}
+
+// Function to delete an employee
+async function deleteEmployee() {
+  // Get the list of employees for the user to choose from
+  const employees = await query('SELECT id, CONCAT(first_name, " ", last_name) AS full_name FROM employees');
+  
+  // Prompt the user to select an employee to delete
+  const employeeToDelete = await inquirer.prompt({
+    type: 'list',
+    name: 'employee_id',
+    message: 'Select the employee to delete:',
+    choices: employees.map((employee) => ({
+      value: employee.id,
+      name: employee.full_name,
+    })),
+  });
+
+  // Delete the selected employee
+  await query('DELETE FROM employees WHERE id = ?', [employeeToDelete.employee_id]);
+  console.log('Employee deleted successfully!');
+  startApp();
+}
+
+// Function to view the total utilized budget of a department
+async function viewDepartmentBudget() {
+  try {
+    // Get the list of departments for the user to choose from
+    const departments = await query('SELECT * FROM departments');
+
+    // Prompt the user to select a department to view the budget
+    const selectedDepartment = await inquirer.prompt({
+      type: 'list',
+      name: 'department_id',
+      message: 'Select the department to view the budget:',
+      choices: departments.map((department) => ({
+        value: department.id,
+        name: department.department_name,
+      })),
+    });
+
+    // Get the total utilized budget of the selected department
+    const budget = await query('SELECT SUM(salary) AS total_budget FROM roles WHERE department_id = ?', [selectedDepartment.department_id]);
+    
+    console.log(`Total Utilized Budget for ${selectedDepartment.department_name}: $${budget[0].total_budget}`);
+    startApp();
+  } catch (error) {
+    console.error('Error viewing department budget:', error);
+    startApp();
+  }
+
+  // Get the total utilized budget of the selected department
+  const budget = await query('SELECT SUM(salary) AS total_budget FROM roles WHERE department_id = ?', [selectedDepartment.department_id]);
+  console.log(`Total Utilized Budget for ${selectedDepartment.department_name}: $${budget[0].total_budget}`);
   startApp();
 }
 
